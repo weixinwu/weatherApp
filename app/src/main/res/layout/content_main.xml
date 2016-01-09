@@ -22,7 +22,7 @@
     android:background="@drawable/background">
 
     <EditText
-        android:layout_width="300dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/location_text"
         android:layout_alignParentTop="true"
@@ -31,16 +31,6 @@
         android:textColor="#1a53ff"
         android:windowSoftInputMode="stateHidden"
         />
-
-    <Button
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:id="@+id/search_btn"
-        android:onClick="search_btn_onClick"
-        android:backgroundTintMode="screen"
-        android:background="@drawable/search_button"
-        android:layout_alignBottom="@+id/location_text"
-        android:layout_alignParentEnd="true" />
 
     <ImageView
         android:layout_width="wrap_content"

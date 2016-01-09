@@ -9,8 +9,8 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Large Text"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="not found"
         android:layout_weight="0.5"
         android:id="@+id/tv_left"
         />
@@ -18,8 +18,8 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Large Text"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="not found"
         android:layout_weight="0.5"
         android:id="@+id/tv_right"
         />

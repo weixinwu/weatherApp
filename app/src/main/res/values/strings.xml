@@ -9,4 +9,5 @@
     <string name="action_Add">add></string>
     <string name="action_clear">clear</string>
     <string name="title_activity_saved_city">SavedCity</string>
+    <string name="action_search">search</string>
 </resources>

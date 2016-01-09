@@ -48,7 +48,6 @@ public class MainActivity extends AppCompatActivity
     ImageView iv;
     ProgressDialog dialog;
     EditText editText;
-    Button search_btn;
     String one_day_forecast_addr;
     String addr_forecast;
     String country;
@@ -108,8 +107,7 @@ public class MainActivity extends AppCompatActivity
             }
             @Override
             public void onProviderDisabled(String provider) {
-                Log.d("J","location service is not available");
-                startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                    startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
             }
         };
 
@@ -121,9 +119,9 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         ////////////////////////////////////////////////////////
-        search_btn = (Button) findViewById(R.id.search_btn);
         iv = (ImageView) findViewById(R.id.imageView_weather_icon);
         editText = (EditText) findViewById(R.id.location_text);
+        editText.setVisibility(View.INVISIBLE);
         sharedpreference = getSharedPreferences("savedInfo",MODE_PRIVATE);
 
         //setting the unit and number of saved city if are not previously set
@@ -135,7 +133,8 @@ public class MainActivity extends AppCompatActivity
         }
         listItem_for_detail = new ArrayList<String>();
         weatherData = new WeatherData();
-        //get_weather_by_GPS();
+        editText.setVisibility(View.INVISIBLE);
+        get_weather_by_GPS();
         //startActivityForResult(new Intent(MainActivity.this,SavedCity.class),15);
 
     }
@@ -244,12 +243,15 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void search_btn_onClick(View v) throws Exception {
+    public void search_btn_onClick() throws Exception {
 
         city = editText.getText().toString();
+        editText.setText("");
+
         city = city.replaceAll("\\s", "");
         Log.d("J","city is " + city+"end");
         if (city != null && !(city.equals(""))) {
+            editText.setVisibility(View.INVISIBLE);
             city = city.substring(0, 1).toUpperCase() + city.substring(1).toLowerCase();
             addr_forecast ="http://api.openweathermap.org/data/2.5/forecast/daily?q="+city+"&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
             one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?q="+city+"&appid=6eb5092a2bd660c2d0830e749f20f99d";
@@ -289,6 +291,17 @@ public class MainActivity extends AppCompatActivity
             get_weather_by_GPS();
         }else if (id ==R.id.action_Add){
             save_the_city();
+        }else if (id ==R.id.action_search){
+            if (editText.getVisibility()==View.INVISIBLE){
+                editText.setVisibility(View.VISIBLE);
+            }else {
+                try {
+                    search_btn_onClick();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
         }
 
         return super.onOptionsItemSelected(item);
@@ -299,12 +312,10 @@ public class MainActivity extends AppCompatActivity
         {
             Toast.makeText(this,"Please enable location service",Toast.LENGTH_SHORT).show();
             startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-
         }
         else {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
                     requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET, Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
                 }
                 else {
@@ -327,9 +338,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-
-
-
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode ==10){
@@ -345,9 +353,7 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_camera) {
-            // Handle the camera action
         } else if (id == R.id.nav_gallery) {
-
         } else if (id == R.id.nav_savedCity) {
             drawer.closeDrawers();
             startActivityForResult(new Intent(MainActivity.this,SavedCity.class),15);
@@ -355,7 +361,6 @@ public class MainActivity extends AppCompatActivity
             drawer.closeDrawers();
             startActivityForResult(new Intent(MainActivity.this, Settings.class), 16);
             //startActivity(new Intent(MainActivity.this,Settings.class));
-
         } else if (id == R.id.nav_share) {
 
             Toast.makeText(getBaseContext(), "sharing..", Toast.LENGTH_SHORT).show();
@@ -367,9 +372,6 @@ public class MainActivity extends AppCompatActivity
 
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-    SharedPreferences getSharedPref(){
-        return sharedpreference;
     }
 
     @Override
