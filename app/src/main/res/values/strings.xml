@@ -7,4 +7,6 @@
     <string name="action_settings">Settings</string>
     <string name="action_GPS">GPS</string>
     <string name="action_Add">add></string>
+    <string name="action_clear">clear</string>
+    <string name="title_activity_saved_city">SavedCity</string>
 </resources>

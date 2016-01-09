@@ -1,6 +1,7 @@
 package com.example.weixin.weatherapp;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
@@ -55,7 +56,8 @@ public class MainActivity extends AppCompatActivity
     double temp[], windSpeed;
     TextView tv_city, tv_description, tv_temp, tv_min_max_temp;
     ListView lv, lv_for_detail;
-    int cel_or_fah ;
+    int cel_or_fah;
+    long city_ID ;
     int forecast[];
     String forecast_main_condition[];
     WeatherData weatherData;
@@ -122,19 +124,19 @@ public class MainActivity extends AppCompatActivity
         search_btn = (Button) findViewById(R.id.search_btn);
         iv = (ImageView) findViewById(R.id.imageView_weather_icon);
         editText = (EditText) findViewById(R.id.location_text);
-//        one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?q=%s&appid=6eb5092a2bd660c2d0830e749f20f99d";
-//        addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?q=%s&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
         sharedpreference = getSharedPreferences("savedInfo",MODE_PRIVATE);
 
-        //setting the unit if it's not previously set
+        //setting the unit and number of saved city if are not previously set
         if (sharedpreference.getInt("cel_or_fah",-1)== -1) {
             sharedpreference.edit().putInt("cel_or_fah", 1).commit();
         }
-
+        if (sharedpreference.getInt("number_of_saved_citys",-1)==-1){
+            sharedpreference.edit().putInt("number_of_saved_citys", 0).commit();
+        }
         listItem_for_detail = new ArrayList<String>();
         weatherData = new WeatherData();
         //get_weather_by_GPS();
-
+        //startActivityForResult(new Intent(MainActivity.this,SavedCity.class),15);
 
     }
 
@@ -152,6 +154,7 @@ public class MainActivity extends AppCompatActivity
                 JSONObject jsonObject = new JSONObject(result);
                 JSONObject forecastJsonObject = new JSONObject(forecast_result);
                 city=weatherData.getCityName(jsonObject);
+                city_ID=weatherData.getCityID(jsonObject);
                 country = weatherData.getCountry(jsonObject);
                 description = weatherData.getDescription(result);
                 temp = weatherData.getTemp(jsonObject);
@@ -272,7 +275,24 @@ public class MainActivity extends AppCompatActivity
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
 
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        } else if (id == R.id.action_GPS) {
+            get_weather_by_GPS();
+        }else if (id ==R.id.action_Add){
+            save_the_city();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 
     public void get_weather_by_GPS() {
         if ((!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))&&(!(locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))))
@@ -308,22 +328,7 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        } else if (id == R.id.action_GPS) {
-            get_weather_by_GPS();
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -343,14 +348,16 @@ public class MainActivity extends AppCompatActivity
             // Handle the camera action
         } else if (id == R.id.nav_gallery) {
 
-        } else if (id == R.id.nav_slideshow) {
-
+        } else if (id == R.id.nav_savedCity) {
+            drawer.closeDrawers();
+            startActivityForResult(new Intent(MainActivity.this,SavedCity.class),15);
         } else if (id == R.id.Setting) {
             drawer.closeDrawers();
             startActivityForResult(new Intent(MainActivity.this, Settings.class), 16);
             //startActivity(new Intent(MainActivity.this,Settings.class));
 
         } else if (id == R.id.nav_share) {
+
             Toast.makeText(getBaseContext(), "sharing..", Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_send) {
 
@@ -367,8 +374,45 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == 16){
+        if (requestCode == 15){
+            if (resultCode == Activity.RESULT_OK) {
+                if (data.getExtras().containsKey("city_ID")) {
+                    city_ID = data.getExtras().getLong("city_ID");
+                    String id = "id=" + city_ID;
+                    one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?" + id + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
+                    addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?" + id + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
+                    new GetWeatherInfo().execute();
+                }
+            }
+        }
+        else if (requestCode == 16){
             new GetWeatherInfo().execute();
+        }
+    }
+    private void save_the_city(){
+        if (city ==null||city.equals("")){
+            Toast.makeText(MainActivity.this, "Please chose search the city first", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            int count = sharedpreference.getInt("number_of_saved_citys", -1);
+            boolean isExist = false;
+            for (int i =0;i < count ; i ++){
+                Long temp = sharedpreference.getLong("city_ID"+i,-1);
+                if (temp == city_ID){
+                    isExist=true;
+                    Toast.makeText(getBaseContext(),"city exists",Toast.LENGTH_SHORT).show();
+                    break;
+                }
+            }
+            if (!isExist) {
+                String city_name = "city" + count;
+                String city_name_ID = "city_ID" + count;
+                sharedpreference.edit().putLong(city_name_ID, city_ID).commit();
+                sharedpreference.edit().putString(city_name, city).commit();
+                count++;
+                sharedpreference.edit().putInt("number_of_saved_citys", count).commit();
+                Toast.makeText(MainActivity.this, "The current city is saved.", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }

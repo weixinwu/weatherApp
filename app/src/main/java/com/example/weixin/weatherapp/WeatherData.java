@@ -110,6 +110,14 @@ public class WeatherData {
             return null;
         }
     }
+    public long getCityID(JSONObject input){
+        try {
+            return input.getLong("id");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
     public double getWindSpeed(JSONObject input)  {
         double wind_speed = 0;
         try {
@@ -201,7 +209,7 @@ public class WeatherData {
             return null;
         }
             catch (Exception e) {
-                Log.d("J","exception in getSUnact");
+                Log.d("J", "exception in getSUnact");
                 e.printStackTrace();
                 return null;
             }

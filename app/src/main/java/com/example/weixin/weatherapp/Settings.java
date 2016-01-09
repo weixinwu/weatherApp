@@ -49,8 +49,8 @@ public class Settings extends AppCompatActivity {
                                 Toast.makeText(Settings.this, "Fahrenheit", Toast.LENGTH_SHORT).show();
                                 getSharedPreferences("savedInfo",MODE_PRIVATE).edit().putInt("cel_or_fah", 0).commit();
                                 dialog.hide();
-                                Settings.this.finish();
                                 setResult(Activity.RESULT_OK);
+                                Settings.this.finish();
                             }
                         }
                     });
