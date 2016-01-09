@@ -11,4 +11,10 @@
         android:orderInCategory="100"
         android:title="@string/action_GPS"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_Add"
+        android:orderInCategory="100"
+        android:title="@string/action_Add"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_add"/>
 </menu>

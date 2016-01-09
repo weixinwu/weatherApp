@@ -1,7 +1,9 @@
 package com.example.weixin.weatherapp;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.Intent;
 import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -38,12 +40,17 @@ public class Settings extends AppCompatActivity {
                         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                             if (position == 0) {
                                 Toast.makeText(Settings.this, "Celsius", Toast.LENGTH_SHORT).show();
+                                getSharedPreferences("savedInfo",MODE_PRIVATE).edit().putInt("cel_or_fah", 1).commit();
                                 dialog.hide();
+                                Settings.this.finish();
+                                setResult(Activity.RESULT_OK);
                                 //sharepreference to store the units
                             } else {
                                 Toast.makeText(Settings.this, "Fahrenheit", Toast.LENGTH_SHORT).show();
-
+                                getSharedPreferences("savedInfo",MODE_PRIVATE).edit().putInt("cel_or_fah", 0).commit();
                                 dialog.hide();
+                                Settings.this.finish();
+                                setResult(Activity.RESULT_OK);
                             }
                         }
                     });

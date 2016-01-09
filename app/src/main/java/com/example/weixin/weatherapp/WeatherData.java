@@ -1,5 +1,7 @@
 package com.example.weixin.weatherapp;
 
+
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -35,12 +37,14 @@ public class WeatherData {
     private String city_name,country,description;
     private String forecast_main_condition[];
 
+
     public String parse(String addr)  {
         Log.d("J",addr);
         URL url;
         String return_value = null;
         URLConnection urlConnection;
         InputStream in = null;
+
         try {
             url = new URL(addr);
             urlConnection = url.openConnection();
@@ -59,6 +63,7 @@ public class WeatherData {
         }
 
     }
+
 
     public String getIcon(JSONObject input)  {
         JSONArray jsonArray = null;
@@ -86,8 +91,9 @@ public class WeatherData {
                 JSONObject jsonObject_temp = jsonObject.getJSONObject("temp");
                 JSONArray jsonArray1_weather = jsonObject.getJSONArray("weather");
                 forecast_main_condition[i] = jsonArray1_weather.optJSONObject(0).getString("main");
-                double temp_min = jsonObject_temp.getDouble("min");
-                double temp_max = jsonObject_temp.getDouble("max");
+                double temp_min = jsonObject_temp.getDouble("min")+273.15;
+                double temp_max = jsonObject_temp.getDouble("max")+273.15;
+
                 if (temp_min<0)
                     temp_min= -(Math.floor(Math.abs(temp_min)+0.5));
                 else temp_min = (Math.floor((temp_min)+0.5));
@@ -219,6 +225,7 @@ public class WeatherData {
         }
         return return_value;
     }
+
 
     public String[] getForecast_main_condition() {
         return forecast_main_condition;

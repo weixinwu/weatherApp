@@ -2,7 +2,9 @@ package com.example.weixin.weatherapp;
 
 import android.Manifest;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -44,26 +46,24 @@ public class MainActivity extends AppCompatActivity
     DrawerLayout drawer;
     ImageView iv;
     ProgressDialog dialog;
-    String location_info;
     EditText editText;
     Button search_btn;
     String one_day_forecast_addr;
     String addr_forecast;
     String country;
     String city, description;
-    double min_temp, max_temp, presure;
     double temp[], windSpeed;
     TextView tv_city, tv_description, tv_temp, tv_min_max_temp;
     ListView lv, lv_for_detail;
-    int cel_or_fah;
-    int forecast[], humidity;
+    int cel_or_fah ;
+    int forecast[];
     String forecast_main_condition[];
     WeatherData weatherData;
     ArrayList<String> listItem_for_forecast, listItem_for_detail;
     Location location;
     LocationManager locationManager;
     LocationListener locationListener;
-
+    SharedPreferences sharedpreference;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,7 +71,6 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         //fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorPrimary));
         fab.setOnClickListener(new View.OnClickListener() {
@@ -105,7 +104,6 @@ public class MainActivity extends AppCompatActivity
             public void onProviderEnabled(String provider) {
 
             }
-
             @Override
             public void onProviderDisabled(String provider) {
                 Log.d("J","location service is not available");
@@ -113,11 +111,6 @@ public class MainActivity extends AppCompatActivity
             }
         };
 
-        //drawer.setStatusBarBackgroundColor(Color.BLUE);
-        Drawable drawable = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
-            drawable = getDrawable(R.drawable.background);
-        }
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
@@ -129,12 +122,18 @@ public class MainActivity extends AppCompatActivity
         search_btn = (Button) findViewById(R.id.search_btn);
         iv = (ImageView) findViewById(R.id.imageView_weather_icon);
         editText = (EditText) findViewById(R.id.location_text);
-        one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?q=%s&appid=6eb5092a2bd660c2d0830e749f20f99d";
-        addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?q=%s&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
-        cel_or_fah = 1;
-        listItem_for_forecast = new ArrayList<String>();
+//        one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?q=%s&appid=6eb5092a2bd660c2d0830e749f20f99d";
+//        addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?q=%s&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
+        sharedpreference = getSharedPreferences("savedInfo",MODE_PRIVATE);
+
+        //setting the unit if it's not previously set
+        if (sharedpreference.getInt("cel_or_fah",-1)== -1) {
+            sharedpreference.edit().putInt("cel_or_fah", 1).commit();
+        }
+
         listItem_for_detail = new ArrayList<String>();
         weatherData = new WeatherData();
+        //get_weather_by_GPS();
 
 
     }
@@ -146,6 +145,7 @@ public class MainActivity extends AppCompatActivity
             String forecast_result="";
             String result="";
             try {
+                listItem_for_forecast = new ArrayList<String>();
                 result += weatherData.parse(one_day_forecast_addr);
                 forecast_result+=weatherData.parse(addr_forecast);
                 Log.d("J", result);
@@ -171,14 +171,14 @@ public class MainActivity extends AppCompatActivity
                     String str;
                     weekDay = dayFormat.format(calendar.getTime());
                     calendar.add(Calendar.DAY_OF_WEEK, 1);
-                    str = weekDay + ": " + forecast[2 * i] + "\u00B0c" + " \u007E " + forecast[2 * i + 1] + "\u00B0c         " + forecast_main_condition[i];
+                    str = weekDay + ": " + temp_unit(forecast[2 * i]) + "\u00B0c" + " \u007E " + temp_unit(forecast[2 * i + 1]) + "\u00B0c         " + forecast_main_condition[i];
                     listItem_for_forecast.add(str);
                 }
                 //get weather icon
                return weatherData.getIcon(jsonObject);
 
             } catch (Exception e) {
-                Log.d("J", "check the internet");
+                Toast.makeText(getBaseContext(),"Please check the internet and try again",Toast.LENGTH_LONG).show();
                 e.printStackTrace();
             }
             return null;
@@ -186,13 +186,9 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected void onPostExecute(String v) {
-            Log.d("J", "start in do in postExe");
             tv_city.setText(city + ", " + country);
             tv_description.setText(description);
-            Log.d("J", "start in do in midle of post");
-
             tv_temp.setText((int) (temp_unit(temp[0])) + "\u00B0c");
-            Log.d("J", "before setting the adapter for detail");
             tv_min_max_temp.setText((int) (temp_unit(temp[1])) + "\u00B0c" + " \u007E " + (int) (temp_unit(temp[2])) + "\u00B0c");
             ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, listItem_for_forecast);
             lv.setAdapter(adapter);
@@ -231,13 +227,17 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public double temp_unit(double input) {
+    public int temp_unit(double input) {
+        cel_or_fah = sharedpreference.getInt("cel_or_fah",-1);
         if (cel_or_fah == 0) {
-            //fah
-            return 0;
+            double temp = (input-273.15)*1.80  + 32;
+            if (temp<0)
+                temp= -(Math.floor(Math.abs(temp)+0.5));
+            else temp = (Math.floor((temp)+0.5));
+            return (int) temp;
         } else {
             double return_val = (double) Math.round(((input - 273.15) * 10d) / 10d);
-            return return_val;
+            return (int) return_val;
         }
     }
 
@@ -273,6 +273,41 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
+
+    public void get_weather_by_GPS() {
+        if ((!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))&&(!(locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))))
+        {
+            Toast.makeText(this,"Please enable location service",Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+
+        }
+        else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+
+                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET, Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
+                }
+                else {
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
+                    location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        // TODO: Consider calling
+                        Log.d("J", "location service is not available");
+                        Toast.makeText(MainActivity.this, "Location is not available", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(MainActivity.this, Settings.class));
+                    }
+                    locationManager.removeUpdates(locationListener);
+                    String geoLocation = "lat=" + location.getLatitude() + "&lon=" + location.getLongitude();
+                    one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?" + geoLocation + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
+                    addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?" + geoLocation + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
+                    new GetWeatherInfo().execute();
+                }
+            }
+
+        }
+    }
+
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -284,32 +319,7 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.action_settings) {
             return true;
         } else if (id == R.id.action_GPS) {
-            if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
-            {
-                Toast.makeText(this,"Please enable location service",Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
-            }
-            else {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-
-                        requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET, Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
-                    }
-                }
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
-                location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    // TODO: Consider calling
-                    Log.d("J", "location service is not available");
-                    Toast.makeText(MainActivity.this, "Location is not available", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(MainActivity.this, Settings.class));
-                }
-                locationManager.removeUpdates(locationListener);
-                String geoLocation = "lat=" + location.getLatitude() + "&lon=" + location.getLongitude();
-                one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?" + geoLocation + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
-                addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?" + geoLocation + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
-                new GetWeatherInfo().execute();
-            }
+            get_weather_by_GPS();
         }
 
         return super.onOptionsItemSelected(item);
@@ -318,6 +328,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode ==10){
+            Toast.makeText(MainActivity.this,"Please allow the application to access the location service and try again", Toast.LENGTH_LONG).show();
             return ;
         }
     }
@@ -336,7 +347,8 @@ public class MainActivity extends AppCompatActivity
 
         } else if (id == R.id.Setting) {
             drawer.closeDrawers();
-            startActivity(new Intent(MainActivity.this,Settings.class));
+            startActivityForResult(new Intent(MainActivity.this, Settings.class), 16);
+            //startActivity(new Intent(MainActivity.this,Settings.class));
 
         } else if (id == R.id.nav_share) {
             Toast.makeText(getBaseContext(), "sharing..", Toast.LENGTH_SHORT).show();
@@ -348,5 +360,15 @@ public class MainActivity extends AppCompatActivity
 
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+    SharedPreferences getSharedPref(){
+        return sharedpreference;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == 16){
+            new GetWeatherInfo().execute();
+        }
     }
 }
