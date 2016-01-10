@@ -11,6 +11,9 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -92,6 +95,7 @@ public class MainActivity extends AppCompatActivity
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         lv = (ListView) findViewById(R.id.list_item_for_forecasts);
         ///set up location manager
+        location =null;
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         locationListener = new LocationListener() {
             @Override
@@ -143,42 +147,45 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected String doInBackground(Void... params) {
-            String forecast_result="";
-            String result="";
+            String forecast_result;
+            String result;
             try {
                 listItem_for_forecast = new ArrayList<String>();
-                result += weatherData.parse(one_day_forecast_addr);
-                forecast_result+=weatherData.parse(addr_forecast);
-                Log.d("J", result);
-                JSONObject jsonObject = new JSONObject(result);
-                JSONObject forecastJsonObject = new JSONObject(forecast_result);
-                city=weatherData.getCityName(jsonObject);
-                city_ID=weatherData.getCityID(jsonObject);
-                country = weatherData.getCountry(jsonObject);
-                description = weatherData.getDescription(result);
-                temp = weatherData.getTemp(jsonObject);
-                //getting detail information
-                weatherData.getSunActs(jsonObject);
-                listItem_for_detail.add(weatherData.getSunrise_sunset()[0]);
-                listItem_for_detail.add(weatherData.getSunrise_sunset()[1]);
-                windSpeed = weatherData.getWindSpeed(jsonObject);
-                forecast = weatherData.getForecast(forecastJsonObject);
-                forecast_main_condition = weatherData.getForecast_main_condition();
-                Log.d("J", "after getting the forecast_main");
-                String weekDay;
-                SimpleDateFormat dayFormat = new SimpleDateFormat("EE", Locale.US);
-                Calendar calendar = Calendar.getInstance();
-                weekDay = dayFormat.format(calendar.getTime());
-                for (int i = 0; i < 7; i++) {
-                    String str;
-                    weekDay = dayFormat.format(calendar.getTime());
-                    calendar.add(Calendar.DAY_OF_WEEK, 1);
-                    str = weekDay + ": " + temp_unit(forecast[2 * i]) + "\u00B0c" + " \u007E " + temp_unit(forecast[2 * i + 1]) + "\u00B0c         " + forecast_main_condition[i];
-                    listItem_for_forecast.add(str);
-                }
-                //get weather icon
-               return weatherData.getIcon(jsonObject);
+                result = weatherData.parse(one_day_forecast_addr);
+                forecast_result=weatherData.parse(addr_forecast);
 
+                if (forecast_result==null||result ==null){
+                    return null;
+                }else {
+                    JSONObject jsonObject = new JSONObject(result);
+                    JSONObject forecastJsonObject = new JSONObject(forecast_result);
+                    city = weatherData.getCityName(jsonObject);
+                    city_ID = weatherData.getCityID(jsonObject);
+                    country = weatherData.getCountry(jsonObject);
+                    description = weatherData.getDescription(result);
+                    temp = weatherData.getTemp(jsonObject);
+                    //getting detail information
+                    weatherData.getSunActs(jsonObject);
+                    listItem_for_detail.add(weatherData.getSunrise_sunset()[0]);
+                    listItem_for_detail.add(weatherData.getSunrise_sunset()[1]);
+                    windSpeed = weatherData.getWindSpeed(jsonObject);
+                    forecast = weatherData.getForecast(forecastJsonObject);
+                    forecast_main_condition = weatherData.getForecast_main_condition();
+                    Log.d("J", "after getting the forecast_main");
+                    String weekDay;
+                    SimpleDateFormat dayFormat = new SimpleDateFormat("EE", Locale.US);
+                    Calendar calendar = Calendar.getInstance();
+                    weekDay = dayFormat.format(calendar.getTime());
+                    for (int i = 0; i < 7; i++) {
+                        String str;
+                        weekDay = dayFormat.format(calendar.getTime());
+                        calendar.add(Calendar.DAY_OF_WEEK, 1);
+                        str = weekDay + ": " + temp_unit(forecast[2 * i]) + "\u00B0c" + " \u007E " + temp_unit(forecast[2 * i + 1]) + "\u00B0c         " + forecast_main_condition[i];
+                        listItem_for_forecast.add(str);
+                    }
+                    //get weather icon
+                    return weatherData.getIcon(jsonObject);
+                }
             } catch (Exception e) {
                 Toast.makeText(getBaseContext(),"Please check the internet and try again",Toast.LENGTH_LONG).show();
                 e.printStackTrace();
@@ -188,44 +195,44 @@ public class MainActivity extends AppCompatActivity
 
         @Override
         protected void onPostExecute(String v) {
-            tv_city.setText(city + ", " + country);
-            tv_description.setText(description);
-            tv_temp.setText((int) (temp_unit(temp[0])) + "\u00B0c");
-            tv_min_max_temp.setText((int) (temp_unit(temp[1])) + "\u00B0c" + " \u007E " + (int) (temp_unit(temp[2])) + "\u00B0c");
-            ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, listItem_for_forecast);
-            lv.setAdapter(adapter);
-            String str[] = {"Wind speed:", "Sunrise: ", "Sunset:", "Humidity:"};
-            String str2[] = new String[5];
-            str2[0] = windSpeed + " meter/sec";
-            str2[1] = weatherData.getSunrise_sunset()[0];
-            str2[2] = weatherData.getSunrise_sunset()[1];
-            str2[3] = temp[4] + "%";
+            if (v ==null){
+                dialog.hide();
+                Toast.makeText(MainActivity.this,"Please check the internet connection", Toast.LENGTH_SHORT).show();
+            }
+            else {
+                tv_city.setText(city + ", " + country);
+                tv_description.setText(description);
+                tv_temp.setText((int) (temp_unit(temp[0])) + "\u00B0c");
+                tv_min_max_temp.setText((int) (temp_unit(temp[1])) + "\u00B0c" + " \u007E " + (int) (temp_unit(temp[2])) + "\u00B0c");
+                ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, listItem_for_forecast);
+                lv.setAdapter(adapter);
+                String str[] = {"Wind speed:", "Sunrise: ", "Sunset:", "Humidity:"};
+                String str2[] = new String[5];
+                str2[0] = windSpeed + " meter/sec";
+                str2[1] = weatherData.getSunrise_sunset()[0];
+                str2[2] = weatherData.getSunrise_sunset()[1];
+                str2[3] = temp[4] + "%";
 
-            Log.d("J", "before setting the adapter for detail");
-            ListAdapter adapter_detail = new custom_listviewAdap(getBaseContext(), str, str2);
-            lv_for_detail.setAdapter(adapter_detail);
-
-            String weather_icon = "weather_"+v;
-            iv.setImageResource(getResources().getIdentifier(weather_icon, "drawable", "com.example.weixin.weatherapp"));
-            lv.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    v.getParent().requestDisallowInterceptTouchEvent(true);
-                    return false;
-                }
-            });
-            dialog.hide();
-
-
+                Log.d("J", "before setting the adapter for detail");
+                ListAdapter adapter_detail = new custom_listviewAdap(getBaseContext(), str, str2);
+                lv_for_detail.setAdapter(adapter_detail);
+                String weather_icon = "weather_" + v;
+                iv.setImageResource(getResources().getIdentifier(weather_icon, "drawable", "com.example.weixin.weatherapp"));
+                lv.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        v.getParent().requestDisallowInterceptTouchEvent(true);
+                        return false;
+                    }
+                });
+                dialog.hide();
+            }
         }
 
         @Override
         protected void onPreExecute() {
             dialog.show();
-
             lv_for_detail = (ListView) findViewById(R.id.detail_listview);
-
-
         }
     }
 
@@ -244,10 +251,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void search_btn_onClick() throws Exception {
-
         city = editText.getText().toString();
         editText.setText("");
-
         city = city.replaceAll("\\s", "");
         Log.d("J","city is " + city+"end");
         if (city != null && !(city.equals(""))) {
@@ -307,20 +312,25 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
+
     public void get_weather_by_GPS() {
-        if ((!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))&&(!(locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))))
+        Log.d("J","before the if ");
+        if ((!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)))
         {
-            Toast.makeText(this,"Please enable location service",Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+            Log.d("J","in the if ");
+            Toast.makeText(this,"Please make sure that location service is enabled and internet is connected",Toast.LENGTH_SHORT).show();
         }
         else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                     requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET, Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
                 }
                 else {
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 0, locationListener);
+                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+                    Log.d("J", " in else , gps is enabled");
                     location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    Log.d("J", " in else , gps is enabled");
                     if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                         // TODO: Consider calling
                         Log.d("J", "location service is not available");
@@ -328,10 +338,15 @@ public class MainActivity extends AppCompatActivity
                         startActivity(new Intent(MainActivity.this, Settings.class));
                     }
                     locationManager.removeUpdates(locationListener);
-                    String geoLocation = "lat=" + location.getLatitude() + "&lon=" + location.getLongitude();
-                    one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?" + geoLocation + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
-                    addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?" + geoLocation + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
-                    new GetWeatherInfo().execute();
+                    if (location ==null){
+                        Toast.makeText(MainActivity.this, "Please try it again", Toast.LENGTH_SHORT).show();
+                    }
+                    else {
+                        String geoLocation = "lat=" + location.getLatitude() + "&lon=" + location.getLongitude();
+                        one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?" + geoLocation + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
+                        addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?" + geoLocation + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
+                        new GetWeatherInfo().execute();
+                    }
                 }
             }
 

@@ -52,13 +52,10 @@ public class WeatherData {
             httpURLConnection.setRequestMethod("GET");
             httpURLConnection.connect();
             in = httpURLConnection.getInputStream();
-
             return_value = inputStreamToString(in);
-            Log.d("J",return_value);
             return return_value;
         } catch (Exception e) {
-
-            Log.d("J", "exception in parse");
+            Log.d("J","in the exception in parse method");
             return null;
         }
 
@@ -225,13 +222,12 @@ public class WeatherData {
                 stringBuilder.append(next_line);
             }
             return_value+= stringBuilder.toString();
-
+            return return_value;
         } catch (Exception e) {
             e.printStackTrace();
-
             return_value=null;
         }
-        return return_value;
+        return null;
     }
 
 

@@ -19,7 +19,7 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.example.weixin.weathernow.MainActivity"
     tools:showIn="@layout/app_bar_main"
-    android:background="@drawable/background">
+    android:background="@drawable/bk">
 
     <EditText
         android:layout_width="match_parent"
@@ -104,7 +104,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/relativelayout_for_detail"
         android:layout_below="@+id/list_item_for_forecasts"
-        android:background="#10fcebb6">
+        android:background="#30fcebb6">
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
