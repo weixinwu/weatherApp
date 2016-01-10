@@ -159,32 +159,34 @@ public class MainActivity extends AppCompatActivity
                 }else {
                     JSONObject jsonObject = new JSONObject(result);
                     JSONObject forecastJsonObject = new JSONObject(forecast_result);
-                    city = weatherData.getCityName(jsonObject);
-                    city_ID = weatherData.getCityID(jsonObject);
-                    country = weatherData.getCountry(jsonObject);
-                    description = weatherData.getDescription(result);
-                    temp = weatherData.getTemp(jsonObject);
-                    //getting detail information
-                    weatherData.getSunActs(jsonObject);
-                    listItem_for_detail.add(weatherData.getSunrise_sunset()[0]);
-                    listItem_for_detail.add(weatherData.getSunrise_sunset()[1]);
-                    windSpeed = weatherData.getWindSpeed(jsonObject);
-                    forecast = weatherData.getForecast(forecastJsonObject);
-                    forecast_main_condition = weatherData.getForecast_main_condition();
-                    Log.d("J", "after getting the forecast_main");
-                    String weekDay;
-                    SimpleDateFormat dayFormat = new SimpleDateFormat("EE", Locale.US);
-                    Calendar calendar = Calendar.getInstance();
-                    weekDay = dayFormat.format(calendar.getTime());
-                    for (int i = 0; i < 7; i++) {
-                        String str;
+                    if (weatherData.isCityFound(jsonObject)) {
+                        city = weatherData.getCityName(jsonObject);
+                        city_ID = weatherData.getCityID(jsonObject);
+                        country = weatherData.getCountry(jsonObject);
+                        description = weatherData.getDescription(result);
+                        temp = weatherData.getTemp(jsonObject);
+                        //getting detail information
+                        weatherData.getSunActs(jsonObject);
+                        listItem_for_detail.add(weatherData.getSunrise_sunset()[0]);
+                        listItem_for_detail.add(weatherData.getSunrise_sunset()[1]);
+                        windSpeed = weatherData.getWindSpeed(jsonObject);
+                        forecast = weatherData.getForecast(forecastJsonObject);
+                        forecast_main_condition = weatherData.getForecast_main_condition();
+                        Log.d("J", "after getting the forecast_main");
+                        String weekDay;
+                        SimpleDateFormat dayFormat = new SimpleDateFormat("EE", Locale.US);
+                        Calendar calendar = Calendar.getInstance();
                         weekDay = dayFormat.format(calendar.getTime());
-                        calendar.add(Calendar.DAY_OF_WEEK, 1);
-                        str = weekDay + ": " + temp_unit(forecast[2 * i]) + "\u00B0c" + " \u007E " + temp_unit(forecast[2 * i + 1]) + "\u00B0c         " + forecast_main_condition[i];
-                        listItem_for_forecast.add(str);
+                        for (int i = 0; i < 7; i++) {
+                            String str;
+                            weekDay = dayFormat.format(calendar.getTime());
+                            calendar.add(Calendar.DAY_OF_WEEK, 1);
+                            str = weekDay + ": " + temp_unit(forecast[2 * i]) + "\u00B0c" + " \u007E " + temp_unit(forecast[2 * i + 1]) + "\u00B0c         " + forecast_main_condition[i];
+                            listItem_for_forecast.add(str);
+                        }
+                        //get weather icon
+                        return weatherData.getIcon(jsonObject);
                     }
-                    //get weather icon
-                    return weatherData.getIcon(jsonObject);
                 }
             } catch (Exception e) {
                 Toast.makeText(getBaseContext(),"Please check the internet and try again",Toast.LENGTH_LONG).show();
@@ -197,7 +199,7 @@ public class MainActivity extends AppCompatActivity
         protected void onPostExecute(String v) {
             if (v ==null){
                 dialog.hide();
-                Toast.makeText(MainActivity.this,"Please check the internet connection", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this,"City not found", Toast.LENGTH_SHORT).show();
             }
             else {
                 tv_city.setText(city + ", " + country);

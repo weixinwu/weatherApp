@@ -230,6 +230,19 @@ public class WeatherData {
         return null;
     }
 
+    public boolean isCityFound(JSONObject input){
+        try {
+            if (input.getInt("cod")!=404){
+                return true;
+            }
+            else {
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     public String[] getForecast_main_condition() {
         return forecast_main_condition;
