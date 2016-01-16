@@ -21,17 +21,6 @@
     tools:showIn="@layout/app_bar_main"
     android:background="#10e3e3e3">
 
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/location_text"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentStart="true"
-        android:backgroundTint="#1a53ff"
-        android:background="#20e3e3e3"
-        android:textColor="#1a53ff"
-        android:windowSoftInputMode="stateHidden"
-        />
 
     <ImageView
         android:layout_width="wrap_content"
@@ -40,7 +29,6 @@
         android:src="@drawable/weather_na"
         android:background="#00000000"
         android:layout_marginTop="93dp"
-        android:layout_below="@+id/location_text"
         android:layout_alignParentEnd="true" />
 
     <TextView
@@ -50,7 +38,6 @@
         android:text=""
         android:id="@+id/tv_city_name"
         android:textStyle="italic"
-        android:layout_below="@+id/location_text"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="25dp" />
 

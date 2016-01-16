@@ -52,7 +52,6 @@ public class MainActivity extends AppCompatActivity
     DrawerLayout drawer;
     ImageView iv;
     ProgressDialog dialog;
-    EditText editText;
     String one_day_forecast_addr;
     String addr_forecast;
     String country;
@@ -137,8 +136,7 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
         ////////////////////////////////////////////////////////
         iv = (ImageView) findViewById(R.id.imageView_weather_icon);
-        editText = (EditText) findViewById(R.id.location_text);
-        editText.setVisibility(View.INVISIBLE);
+
 
         //setting the unit and number of saved city if are not previously set
         if (sharedpreference.getInt("cel_or_fah",-1)== -1) {
@@ -149,7 +147,7 @@ public class MainActivity extends AppCompatActivity
         }
         listItem_for_detail = new ArrayList<String>();
         weatherData = new WeatherData();
-        editText.setVisibility(View.INVISIBLE);
+
 
         rate_my_app();
 
@@ -238,8 +236,6 @@ public class MainActivity extends AppCompatActivity
             try {
 
                 if (isNetworkAvailable()) {
-                    Log.i("J",addr_forecast);
-                    Log.i("J",one_day_forecast_addr);
                     listItem_for_forecast = new ArrayList<String>();
                     result = weatherData.parse(one_day_forecast_addr);
                     forecast_result = weatherData.parse(addr_forecast);
@@ -348,11 +344,9 @@ public class MainActivity extends AppCompatActivity
 
 
     public void search_btn_onClick() throws Exception {
-        city = editText.getText().toString();
-        editText.setText("");
+
         city = city.replaceAll("\\s", "");
         if (city != null && !(city.equals(""))) {
-            editText.setVisibility(View.INVISIBLE);
             city = city.substring(0, 1).toUpperCase() + city.substring(1).toLowerCase();
             addr_forecast ="http://api.openweathermap.org/data/2.5/forecast/daily?q="+city+"&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
             one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?q="+city+"&appid=6eb5092a2bd660c2d0830e749f20f99d";
@@ -386,15 +380,31 @@ public class MainActivity extends AppCompatActivity
         }else if (id ==R.id.action_Add){
             save_the_city();
         }else if (id ==R.id.action_search){
-            if (editText.getVisibility()==View.INVISIBLE){
-                editText.setVisibility(View.VISIBLE);
-            }else {
-                try {
-                    search_btn_onClick();
-                } catch (Exception e) {
-                    e.printStackTrace();
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            final EditText serach_editText = new EditText(MainActivity.this);
+            builder.setView(serach_editText);
+            builder.setTitle("Search");
+            builder.setMessage("Enter the city name below");
+            builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    city = serach_editText.getText().toString();
+                    try {
+                        search_btn_onClick();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        Toast.makeText(MainActivity.this, "Error, Please check the internet", Toast.LENGTH_SHORT).show();
+                    }
                 }
-            }
+            });
+            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    ;
+                }
+            });
+            builder.show();
         }
         return super.onOptionsItemSelected(item);
     }
