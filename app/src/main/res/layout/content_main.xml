@@ -19,7 +19,7 @@
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.example.weixin.weathernow.MainActivity"
     tools:showIn="@layout/app_bar_main"
-    android:background="@drawable/bk">
+    android:background="#10e3e3e3">
 
     <EditText
         android:layout_width="match_parent"
@@ -27,7 +27,8 @@
         android:id="@+id/location_text"
         android:layout_alignParentTop="true"
         android:layout_alignParentStart="true"
-        android:backgroundTint="#801a53ff"
+        android:backgroundTint="#1a53ff"
+        android:background="#20e3e3e3"
         android:textColor="#1a53ff"
         android:windowSoftInputMode="stateHidden"
         />

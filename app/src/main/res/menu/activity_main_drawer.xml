@@ -3,16 +3,8 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_camera"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="Import" />
-        <item
-            android:id="@+id/nav_gallery"
-            android:icon="@drawable/ic_menu_gallery"
-            android:title="Gallery" />
-        <item
             android:id="@+id/nav_savedCity"
-            android:icon="@drawable/ic_menu_slideshow"
+            android:icon="@drawable/ic_menu_saved"
             android:title="Saved cities" />
         <item
             android:id="@+id/Setting"

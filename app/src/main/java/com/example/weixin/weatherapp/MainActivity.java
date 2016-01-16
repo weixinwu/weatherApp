@@ -2,18 +2,20 @@ package com.example.weixin.weatherapp;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
-import android.net.Network;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -31,11 +33,11 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import org.json.JSONObject;
@@ -58,6 +60,7 @@ public class MainActivity extends AppCompatActivity
     double temp[], windSpeed;
     TextView tv_city, tv_description, tv_temp, tv_min_max_temp;
     ListView lv, lv_for_detail;
+    RelativeLayout rl;
     int cel_or_fah;
     long city_ID ;
     int forecast[];
@@ -71,7 +74,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -89,11 +91,40 @@ public class MainActivity extends AppCompatActivity
         dialog = new ProgressDialog(this);
         dialog.setMessage("Loading...");
         tv_city = (TextView) findViewById(R.id.tv_city_name);
+        tv_city.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                startActivityForResult(new Intent(MainActivity.this, SavedCity.class), SAVED_CITIES_ACTIVITY_REQUESTCODE);
+                return true;
+            }
+        });
         tv_description = (TextView) findViewById(R.id.tv_description);
         tv_temp = (TextView) findViewById(R.id.tv_temperature);
+        sharedpreference = getSharedPreferences("savedInfo",MODE_PRIVATE);
+        tv_temp.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                int temp = sharedpreference.getInt("cel_or_fah", -1);
+                if (temp == 1) {
+                    sharedpreference.edit().putInt("cel_or_fah", 0).commit();
+                    Toast.makeText(MainActivity.this, "Temperature unit changed to Fahrenheit ", Toast.LENGTH_SHORT).show();
+                } else {
+                    sharedpreference.edit().putInt("cel_or_fah", 1).commit();
+                    Toast.makeText(MainActivity.this, "Temperature unit changed to Celsius ", Toast.LENGTH_SHORT).show();
+                }
+
+                new GetWeatherInfo().execute();
+
+                return true;
+            }
+        });
+
+
         tv_min_max_temp = (TextView) findViewById(R.id.tv_min_max_temp);
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         lv = (ListView) findViewById(R.id.list_item_for_forecasts);
+        rl=(RelativeLayout)findViewById(R.id.relativelayout_for_detail);
+        rl.setVisibility(View.INVISIBLE);
         ///set up location manager
         location =null;
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -111,7 +142,7 @@ public class MainActivity extends AppCompatActivity
             }
             @Override
             public void onProviderDisabled(String provider) {
-                    startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+                startActivity(new Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS));
             }
         };
 
@@ -126,7 +157,6 @@ public class MainActivity extends AppCompatActivity
         iv = (ImageView) findViewById(R.id.imageView_weather_icon);
         editText = (EditText) findViewById(R.id.location_text);
         editText.setVisibility(View.INVISIBLE);
-        sharedpreference = getSharedPreferences("savedInfo",MODE_PRIVATE);
 
         //setting the unit and number of saved city if are not previously set
         if (sharedpreference.getInt("cel_or_fah",-1)== -1) {
@@ -138,9 +168,64 @@ public class MainActivity extends AppCompatActivity
         listItem_for_detail = new ArrayList<String>();
         weatherData = new WeatherData();
         editText.setVisibility(View.INVISIBLE);
-        get_weather_by_GPS();
-        //startActivityForResult(new Intent(MainActivity.this,SavedCity.class),15);
 
+        rate_my_app();
+
+
+        if (sharedpreference.getBoolean("default_CITY_VALID", false)){
+            city=sharedpreference.getString("default_CITY","");
+            if (!city.equals("")) {
+                city = city.substring(0, 1).toUpperCase() + city.substring(1).toLowerCase();
+                addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?q=" + city + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
+                one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
+                new GetWeatherInfo().execute();
+            }
+        }
+        else
+            get_weather_by_GPS();
+    }
+
+    private void rate_my_app(){
+        int temp=sharedpreference.getInt("rate_my_app",-1);
+        if (temp ==-1){
+            sharedpreference.edit().putInt("rate_my_app",0).commit();
+        }else if (temp>=0){
+            temp+=1;
+            sharedpreference.edit().putInt("rate_my_app", temp).commit();
+        }
+        if (temp >5&& temp !=-2){
+            Dialog dialog = new Dialog(MainActivity.this);
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            String title = "If you enjoy using this app, please take a moment to rate this app, Thank you for your time and support!";
+            builder.setTitle(title);
+            builder.setIcon(R.mipmap.ic_launcher);
+            builder.setPositiveButton("Rate now", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Intent i = new Intent(Intent.ACTION_VIEW);
+                    i.setData(Uri.parse("market://details?id=" + getPackageName()));
+                    sharedpreference.edit().putInt("rate_my_app", -2).commit();
+                    startActivity(i);
+
+                }
+            });
+            builder.setNegativeButton("No, Thanks", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    sharedpreference.edit().putInt("rate_my_app", -2).commit();
+
+                }
+            });
+            dialog = builder.create();
+            dialog.show();
+        }
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     class GetWeatherInfo extends AsyncTask<Void, Void, String> {
@@ -150,43 +235,52 @@ public class MainActivity extends AppCompatActivity
             String forecast_result;
             String result;
             try {
-                listItem_for_forecast = new ArrayList<String>();
-                result = weatherData.parse(one_day_forecast_addr);
-                forecast_result=weatherData.parse(addr_forecast);
 
-                if (forecast_result==null||result ==null){
-                    return null;
-                }else {
-                    JSONObject jsonObject = new JSONObject(result);
-                    JSONObject forecastJsonObject = new JSONObject(forecast_result);
-                    if (weatherData.isCityFound(jsonObject)) {
-                        city = weatherData.getCityName(jsonObject);
-                        city_ID = weatherData.getCityID(jsonObject);
-                        country = weatherData.getCountry(jsonObject);
-                        description = weatherData.getDescription(result);
-                        temp = weatherData.getTemp(jsonObject);
-                        //getting detail information
-                        weatherData.getSunActs(jsonObject);
-                        listItem_for_detail.add(weatherData.getSunrise_sunset()[0]);
-                        listItem_for_detail.add(weatherData.getSunrise_sunset()[1]);
-                        windSpeed = weatherData.getWindSpeed(jsonObject);
-                        forecast = weatherData.getForecast(forecastJsonObject);
-                        forecast_main_condition = weatherData.getForecast_main_condition();
-                        Log.d("J", "after getting the forecast_main");
-                        String weekDay;
-                        SimpleDateFormat dayFormat = new SimpleDateFormat("EE", Locale.US);
-                        Calendar calendar = Calendar.getInstance();
-                        weekDay = dayFormat.format(calendar.getTime());
-                        for (int i = 0; i < 7; i++) {
-                            String str;
+                if (isNetworkAvailable()) {
+                    listItem_for_forecast = new ArrayList<String>();
+                    result = weatherData.parse(one_day_forecast_addr);
+                    forecast_result = weatherData.parse(addr_forecast);
+                    if (forecast_result == null || result == null) {
+                        return null;
+                    } else {
+                        JSONObject jsonObject = new JSONObject(result);
+                        JSONObject forecastJsonObject = new JSONObject(forecast_result);
+                        if (weatherData.isCityFound(jsonObject)) {
+                            city = weatherData.getCityName(jsonObject);
+                            city_ID = weatherData.getCityID(jsonObject);
+                            country = weatherData.getCountry(jsonObject);
+                            description = weatherData.getDescription(result);
+                            temp = weatherData.getTemp(jsonObject);
+                            //getting detail information
+                            weatherData.getSunActs(jsonObject);
+                            listItem_for_detail.add(weatherData.getSunrise_sunset()[0]);
+                            listItem_for_detail.add(weatherData.getSunrise_sunset()[1]);
+                            windSpeed = weatherData.getWindSpeed(jsonObject);
+                            forecast = weatherData.getForecast(forecastJsonObject);
+                            forecast_main_condition = weatherData.getForecast_main_condition();
+                            String weekDay;
+                            SimpleDateFormat dayFormat = new SimpleDateFormat("EE", Locale.US);
+                            Calendar calendar = Calendar.getInstance();
+                            calendar.add(Calendar.DATE, 1);
                             weekDay = dayFormat.format(calendar.getTime());
-                            calendar.add(Calendar.DAY_OF_WEEK, 1);
-                            str = weekDay + ": " + temp_unit(forecast[2 * i]) + "\u00B0c" + " \u007E " + temp_unit(forecast[2 * i + 1]) + "\u00B0c         " + forecast_main_condition[i];
-                            listItem_for_forecast.add(str);
+                            for (int i = 0; i < 7; i++) {
+                                String str;
+                                weekDay = dayFormat.format(calendar.getTime());
+                                calendar.add(Calendar.DAY_OF_WEEK, 1);
+                                if (sharedpreference.getInt("cel_or_fah",-1)==0){
+                                    str = weekDay + ": " + temp_unit(forecast[2 * i]) + "\u00B0F" + " \u007E " + temp_unit(forecast[2 * i + 1]) + "\u00B0F         " + forecast_main_condition[i];
+                                }
+                                else {
+                                    str = weekDay + ": " + temp_unit(forecast[2 * i]) + "\u00B0c" + " \u007E " + temp_unit(forecast[2 * i + 1]) + "\u00B0c         " + forecast_main_condition[i];
+                                }
+                                listItem_for_forecast.add(str);
+                            }
+                            //get weather icon
+                            return weatherData.getIcon(jsonObject);
                         }
-                        //get weather icon
-                        return weatherData.getIcon(jsonObject);
                     }
+                }else {
+                    return null;
                 }
             } catch (Exception e) {
                 Toast.makeText(getBaseContext(),"Please check the internet and try again",Toast.LENGTH_LONG).show();
@@ -194,28 +288,33 @@ public class MainActivity extends AppCompatActivity
             }
             return null;
         }
-
         @Override
         protected void onPostExecute(String v) {
             if (v ==null){
                 dialog.hide();
-                Toast.makeText(MainActivity.this,"City not found", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this,"City not found,please check the internet connection", Toast.LENGTH_SHORT).show();
             }
             else {
+                rl.setVisibility(View.VISIBLE);
                 tv_city.setText(city + ", " + country);
                 tv_description.setText(description);
-                tv_temp.setText((int) (temp_unit(temp[0])) + "\u00B0c");
-                tv_min_max_temp.setText((int) (temp_unit(temp[1])) + "\u00B0c" + " \u007E " + (int) (temp_unit(temp[2])) + "\u00B0c");
+                if (sharedpreference.getInt("cel_or_fah",-1)==0){
+                    tv_temp.setText((int) (temp_unit(temp[0])) + "\u00B0F");
+                    tv_min_max_temp.setText((int) (temp_unit(temp[1])) + "\u00B0F" + " \u007E " + (int) (temp_unit(temp[2])) + "\u00B0F");
+                }
+                else {
+                    tv_temp.setText((int) (temp_unit(temp[0])) + "\u00B0C");
+                    tv_min_max_temp.setText((int) (temp_unit(temp[1])) + "\u00B0C" + " \u007E " + (int) (temp_unit(temp[2])) + "\u00B0C");
+                }
                 ArrayAdapter<String> adapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_list_item_1, listItem_for_forecast);
                 lv.setAdapter(adapter);
-                String str[] = {"Wind speed:", "Sunrise: ", "Sunset:", "Humidity:"};
+                String str[] = {"Wind speed:", "Sunrise: ", "Sunset:", "Humidity:","Pressure:"};
                 String str2[] = new String[5];
                 str2[0] = windSpeed + " meter/sec";
                 str2[1] = weatherData.getSunrise_sunset()[0];
                 str2[2] = weatherData.getSunrise_sunset()[1];
                 str2[3] = temp[4] + "%";
-
-                Log.d("J", "before setting the adapter for detail");
+                str2[4]=(int)temp[3]+" hPa";
                 ListAdapter adapter_detail = new custom_listviewAdap(getBaseContext(), str, str2);
                 lv_for_detail.setAdapter(adapter_detail);
                 String weather_icon = "weather_" + v;
@@ -227,7 +326,10 @@ public class MainActivity extends AppCompatActivity
                         return false;
                     }
                 });
+                sharedpreference.edit().putString("default_CITY",city).commit();
+                sharedpreference.edit().putBoolean("default_CITY_VALID",true).commit();
                 dialog.hide();
+
             }
         }
 
@@ -238,25 +340,12 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public int temp_unit(double input) {
-        cel_or_fah = sharedpreference.getInt("cel_or_fah",-1);
-        if (cel_or_fah == 0) {
-            double temp = (input-273.15)*1.80  + 32;
-            if (temp<0)
-                temp= -(Math.floor(Math.abs(temp)+0.5));
-            else temp = (Math.floor((temp)+0.5));
-            return (int) temp;
-        } else {
-            double return_val = (double) Math.round(((input - 273.15) * 10d) / 10d);
-            return (int) return_val;
-        }
-    }
+
 
     public void search_btn_onClick() throws Exception {
         city = editText.getText().toString();
         editText.setText("");
         city = city.replaceAll("\\s", "");
-        Log.d("J","city is " + city+"end");
         if (city != null && !(city.equals(""))) {
             editText.setVisibility(View.INVISIBLE);
             city = city.substring(0, 1).toUpperCase() + city.substring(1).toLowerCase();
@@ -286,15 +375,8 @@ public class MainActivity extends AppCompatActivity
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        } else if (id == R.id.action_GPS) {
+        if (id == R.id.action_GPS) {
             get_weather_by_GPS();
         }else if (id ==R.id.action_Add){
             save_the_city();
@@ -310,54 +392,50 @@ public class MainActivity extends AppCompatActivity
             }
 
         }
-
         return super.onOptionsItemSelected(item);
     }
 
 
     public void get_weather_by_GPS() {
-        Log.d("J","before the if ");
+
+
         if ((!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)))
         {
-            Log.d("J","in the if ");
             Toast.makeText(this,"Please make sure that location service is enabled and internet is connected",Toast.LENGTH_SHORT).show();
         }
         else {
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET, Manifest.permission.ACCESS_COARSE_LOCATION}, 10);
-                }
-                else {
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
-                    Log.d("J", " in else , gps is enabled");
-                    location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    Log.d("J", " in else , gps is enabled");
-                    if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        // TODO: Consider calling
-                        Log.d("J", "location service is not available");
-                        Toast.makeText(MainActivity.this, "Location is not available", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(MainActivity.this, Settings.class));
-                    }
-                    locationManager.removeUpdates(locationListener);
-                    if (location ==null){
-                        Toast.makeText(MainActivity.this, "Please try it again", Toast.LENGTH_SHORT).show();
-                    }
-                    else {
-                        String geoLocation = "lat=" + location.getLatitude() + "&lon=" + location.getLongitude();
-                        one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?" + geoLocation + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
-                        addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?" + geoLocation + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
-                        new GetWeatherInfo().execute();
-                    }
-                }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.INTERNET, Manifest.permission.ACCESS_COARSE_LOCATION},REQUEST_GPS_PERMISSION);
             }
-
+            else {
+                getGPS();
+            }
         }
     }
-
+    public void getGPS(){
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locationListener);
+        if (location==null) {
+            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        }
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(MainActivity.this, "Location is not available", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(MainActivity.this, Settings.class));
+        }
+        if (location ==null){
+            Toast.makeText(MainActivity.this, "Please try it again, if access location permission is not enable, please go to the setting to enable location permission for this app", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            String geoLocation = "lat=" + location.getLatitude() + "&lon=" + location.getLongitude();
+            one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?" + geoLocation + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
+            addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?" + geoLocation + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
+            locationManager.removeUpdates(locationListener);
+            new GetWeatherInfo().execute();
+        }
+    }
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode ==10){
+        if (requestCode ==REQUEST_GPS_PERMISSION){
             Toast.makeText(MainActivity.this,"Please allow the application to access the location service and try again", Toast.LENGTH_LONG).show();
             return ;
         }
@@ -369,20 +447,17 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-        } else if (id == R.id.nav_gallery) {
-        } else if (id == R.id.nav_savedCity) {
+        if (id == R.id.nav_savedCity) {
             drawer.closeDrawers();
-            startActivityForResult(new Intent(MainActivity.this,SavedCity.class),15);
+            startActivityForResult(new Intent(MainActivity.this,SavedCity.class),SAVED_CITIES_ACTIVITY_REQUESTCODE);
         } else if (id == R.id.Setting) {
             drawer.closeDrawers();
-            startActivityForResult(new Intent(MainActivity.this, Settings.class), 16);
-            //startActivity(new Intent(MainActivity.this,Settings.class));
+            startActivityForResult(new Intent(MainActivity.this, Settings.class), SETTINGS_ACTIVITY_REQUESTCODE);
         } else if (id == R.id.nav_share) {
 
-            Toast.makeText(getBaseContext(), "sharing..", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getBaseContext(), "Sharing is not available at the moment", Toast.LENGTH_SHORT).show();
         } else if (id == R.id.nav_send) {
-
+            Toast.makeText(getBaseContext(), "Please send an email to 78669156@foxmail.com", Toast.LENGTH_LONG).show();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -393,7 +468,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == 15){
+        if (requestCode == SAVED_CITIES_ACTIVITY_REQUESTCODE){
             if (resultCode == Activity.RESULT_OK) {
                 if (data.getExtras().containsKey("city_ID")) {
                     city_ID = data.getExtras().getLong("city_ID");
@@ -404,7 +479,7 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         }
-        else if (requestCode == 16){
+        else if (requestCode == SETTINGS_ACTIVITY_REQUESTCODE){
             new GetWeatherInfo().execute();
         }
     }
@@ -434,4 +509,21 @@ public class MainActivity extends AppCompatActivity
             }
         }
     }
+    public int temp_unit(double input) {
+        cel_or_fah = sharedpreference.getInt("cel_or_fah",-1);
+        if (cel_or_fah == 0) {
+            double temp = (input-273.15)*1.80  + 32;
+            if (temp<0)
+                temp= -(Math.floor(Math.abs(temp)+0.5));
+            else temp = (Math.floor((temp)+0.5));
+            return (int) temp;
+        } else {
+            double return_val = (double) Math.round(((input - 273.15) * 10d) / 10d);
+            return (int) return_val;
+        }
+    }
+
+    private static final int REQUEST_GPS_PERMISSION=10;
+    private static final int SAVED_CITIES_ACTIVITY_REQUESTCODE = 15;
+    private static final int SETTINGS_ACTIVITY_REQUESTCODE = 16;
 }

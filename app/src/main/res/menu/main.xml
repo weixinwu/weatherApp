@@ -10,6 +10,7 @@
         android:id="@+id/action_GPS"
         android:orderInCategory="100"
         android:title="@string/action_GPS"
+        android:icon="@drawable/ic_gps"
         app:showAsAction="always" />
     <item
         android:id="@+id/action_Add"
