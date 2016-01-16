@@ -326,6 +326,7 @@ public class MainActivity extends AppCompatActivity
                         return false;
                     }
                 });
+
                 sharedpreference.edit().putString("default_CITY",city).commit();
                 sharedpreference.edit().putBoolean("default_CITY_VALID",true).commit();
                 dialog.hide();
