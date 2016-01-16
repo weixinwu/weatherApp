@@ -39,7 +39,8 @@ public class WeatherData {
 
 
     public String parse(String addr)  {
-        Log.d("J",addr);
+        addr = addr.replaceAll(" ","%20");
+        Log.i("J",addr);
         URL url;
         String return_value = null;
         URLConnection urlConnection;

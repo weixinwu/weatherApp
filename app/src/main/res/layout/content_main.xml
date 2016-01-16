@@ -88,7 +88,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:textColor="#000000"
+        android:textColor="#101010"
         android:layout_below="@+id/tv_description"
         android:text="  Weather forecast in a week"
         android:id="@+id/tv_weather_forecast"
@@ -111,18 +111,24 @@
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
             android:text="Detail"
-            android:textColor="#e9e9e9e9"
+            android:textColor="#101010"
             android:id="@+id/tv_detail"
             />
         <ListView
             android:layout_width="match_parent"
-            android:layout_height="80dp"
+            android:layout_height="130dp"
             android:id="@+id/detail_listview"
             android:layout_below="@+id/tv_detail">
 
         </ListView>
 
     </RelativeLayout>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="660dp"
+        android:text="Power by OpenWeatherMap"/>
 
 </RelativeLayout>
 

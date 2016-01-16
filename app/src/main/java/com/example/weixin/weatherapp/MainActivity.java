@@ -101,25 +101,7 @@ public class MainActivity extends AppCompatActivity
         tv_description = (TextView) findViewById(R.id.tv_description);
         tv_temp = (TextView) findViewById(R.id.tv_temperature);
         sharedpreference = getSharedPreferences("savedInfo",MODE_PRIVATE);
-        tv_temp.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                int temp = sharedpreference.getInt("cel_or_fah", -1);
-                if (temp == 1) {
-                    sharedpreference.edit().putInt("cel_or_fah", 0).commit();
-                    Toast.makeText(MainActivity.this, "Temperature unit changed to Fahrenheit ", Toast.LENGTH_SHORT).show();
-                } else {
-                    sharedpreference.edit().putInt("cel_or_fah", 1).commit();
-                    Toast.makeText(MainActivity.this, "Temperature unit changed to Celsius ", Toast.LENGTH_SHORT).show();
-                }
-
-                new GetWeatherInfo().execute();
-
-                return true;
-            }
-        });
-
-
+        tv_temp.setOnLongClickListener(onLongClickListener);
         tv_min_max_temp = (TextView) findViewById(R.id.tv_min_max_temp);
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         lv = (ListView) findViewById(R.id.list_item_for_forecasts);
@@ -176,6 +158,7 @@ public class MainActivity extends AppCompatActivity
             city=sharedpreference.getString("default_CITY","");
             if (!city.equals("")) {
                 city = city.substring(0, 1).toUpperCase() + city.substring(1).toLowerCase();
+                Log.d("J","city is :"+city);
                 addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?q=" + city + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
                 one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
                 new GetWeatherInfo().execute();
@@ -184,6 +167,24 @@ public class MainActivity extends AppCompatActivity
         else
             get_weather_by_GPS();
     }
+
+    private View.OnLongClickListener onLongClickListener = new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View v) {
+            int temp = sharedpreference.getInt("cel_or_fah", -1);
+            if (temp == 1) {
+                sharedpreference.edit().putInt("cel_or_fah", 0).commit();
+                Toast.makeText(MainActivity.this, "Temperature unit changed to Fahrenheit ", Toast.LENGTH_SHORT).show();
+            } else {
+                sharedpreference.edit().putInt("cel_or_fah", 1).commit();
+                Toast.makeText(MainActivity.this, "Temperature unit changed to Celsius ", Toast.LENGTH_SHORT).show();
+            }
+
+            new GetWeatherInfo().execute();
+
+            return true;
+        }
+    };
 
     private void rate_my_app(){
         int temp=sharedpreference.getInt("rate_my_app",-1);
@@ -237,9 +238,12 @@ public class MainActivity extends AppCompatActivity
             try {
 
                 if (isNetworkAvailable()) {
+                    Log.i("J",addr_forecast);
+                    Log.i("J",one_day_forecast_addr);
                     listItem_for_forecast = new ArrayList<String>();
                     result = weatherData.parse(one_day_forecast_addr);
                     forecast_result = weatherData.parse(addr_forecast);
+
                     if (forecast_result == null || result == null) {
                         return null;
                     } else {
@@ -328,7 +332,7 @@ public class MainActivity extends AppCompatActivity
                 });
 
                 sharedpreference.edit().putString("default_CITY",city).commit();
-                sharedpreference.edit().putBoolean("default_CITY_VALID",true).commit();
+                sharedpreference.edit().putBoolean("default_CITY_VALID", true).commit();
                 dialog.hide();
 
             }
@@ -391,7 +395,6 @@ public class MainActivity extends AppCompatActivity
                     e.printStackTrace();
                 }
             }
-
         }
         return super.onOptionsItemSelected(item);
     }
@@ -436,9 +439,12 @@ public class MainActivity extends AppCompatActivity
     }
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode ==REQUEST_GPS_PERMISSION){
-            Toast.makeText(MainActivity.this,"Please allow the application to access the location service and try again", Toast.LENGTH_LONG).show();
+        if (requestCode ==REQUEST_GPS_PERMISSION&& grantResults[0]==0){
+            get_weather_by_GPS();
             return ;
+        }else if (requestCode ==REQUEST_GPS_PERMISSION&& grantResults[0]==-1){
+            Toast.makeText(MainActivity.this,"Please allow the application to access the location service and try again", Toast.LENGTH_LONG).show();
+            return;
         }
     }
 
