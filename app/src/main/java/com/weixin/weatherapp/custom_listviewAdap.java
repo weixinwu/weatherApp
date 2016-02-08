@@ -1,14 +1,12 @@
 package com.weixin.weatherapp;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
 
-import java.util.List;
 
 /**
  * Created by Weixin on 2016-01-07.

@@ -1,11 +1,11 @@
 package com.weixin.weatherapp;
 
 
-import android.content.SharedPreferences;
+
 import android.location.Location;
-import android.os.AsyncTask;
+
 import android.util.Log;
-import android.widget.Toast;
+
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,13 +15,12 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
+
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
+
 
 /**
  * Created by Weixin on 2016-01-06.
@@ -30,11 +29,9 @@ public class WeatherData {
 
     private Location location;
     private InputStream inputStream;
-    private String result;
     private long sunrise,sunset;
     String sunrise_sunset[];
     private double temp[];
-    private String city_name,country,description;
     private String forecast_main_condition[];
 
 
@@ -173,8 +170,7 @@ public class WeatherData {
         }
     }
     public String getCityName(JSONObject input) {
-        String temp = "";
-        String ret = null;
+        String ret;
         try {
             ret = input.getString("name");
             return ret;
@@ -249,39 +245,6 @@ public class WeatherData {
         return forecast_main_condition;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public String getCity_name() {
-        return city_name;
-    }
-
-    public void setResult(String result) {
-        this.result = result;
-    }
-
-    public void setLocation(Location location) {
-        this.location = location;
-    }
-
-    public void setInputStream(InputStream inputStream) {
-        this.inputStream = inputStream;
-    }
-
-
-
-    public Location getLocation() {
-        return location;
-    }
-
-    public InputStream getInputStream() {
-        return inputStream;
-    }
 
 
 }

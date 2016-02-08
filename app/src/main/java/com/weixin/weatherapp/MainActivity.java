@@ -78,10 +78,11 @@ public class MainActivity extends AppCompatActivity
         setSupportActionBar(toolbar);
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         //fab.setBackgroundTintList(getResources().getColorStateList(R.color.colorPrimary));
+
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (city != null || !(city.equals(""))) {
+                if (city != null && !(city.equals(""))) {
                     new GetWeatherInfo().execute();
                 } else
                     Toast.makeText(MainActivity.this, "Please enter a city and retry", Toast.LENGTH_SHORT).show();
@@ -134,7 +135,6 @@ public class MainActivity extends AppCompatActivity
         drawer.setScrimColor(getResources().getColor(R.color.colorPrimary));
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        ////////////////////////////////////////////////////////
         iv = (ImageView) findViewById(R.id.imageView_weather_icon);
 
 
@@ -156,7 +156,6 @@ public class MainActivity extends AppCompatActivity
             city=sharedpreference.getString("default_CITY","");
             if (!city.equals("")) {
                 city = city.substring(0, 1).toUpperCase() + city.substring(1).toLowerCase();
-                Log.d("J","city is :"+city);
                 addr_forecast = "http://api.openweathermap.org/data/2.5/forecast/daily?q=" + city + "&units=metric&mode=json&cnt=7&appid=6eb5092a2bd660c2d0830e749f20f99d";
                 one_day_forecast_addr = "http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=6eb5092a2bd660c2d0830e749f20f99d";
                 new GetWeatherInfo().execute();
@@ -193,7 +192,7 @@ public class MainActivity extends AppCompatActivity
             sharedpreference.edit().putInt("rate_my_app", temp).commit();
         }
         if (temp >5&& temp !=-2){
-            Dialog dialog = new Dialog(MainActivity.this);
+            Dialog dialog;// = new Dialog(MainActivity.this);
             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
             String title = "If you enjoy using this app, please take a moment to rate this app, Thank you for your time and support!";
             builder.setTitle(title);
@@ -318,7 +317,7 @@ public class MainActivity extends AppCompatActivity
                 ListAdapter adapter_detail = new custom_listviewAdap(getBaseContext(), str, str2);
                 lv_for_detail.setAdapter(adapter_detail);
                 String weather_icon = "weather_" + v;
-                iv.setImageResource(getResources().getIdentifier(weather_icon, "drawable", "com.example.weixin.weatherapp"));
+                iv.setImageResource(getResources().getIdentifier(weather_icon, "drawable", "com.weixin.weatherapp"));
                 lv.setOnTouchListener(new View.OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
